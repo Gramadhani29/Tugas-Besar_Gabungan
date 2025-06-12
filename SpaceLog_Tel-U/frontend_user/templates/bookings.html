@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SpaceLog Tel-U | Booking Room</title>
+    <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='icon.png') }}" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-900 min-h-screen flex flex-col">
+    <nav class="bg-white shadow mb-6 sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <a href="{{ url_for('index') }}" class="flex items-center space-x-2 transition transform hover:scale-105">
+                <img src="{{ url_for('static', filename='icon.png') }}" alt="Logo" class="w-10 h-10" />
+                <span class="text-lg font-bold text-green-600">SpaceLog Tel-U</span>
+            </a>
+
+            <div class="space-x-2 flex items-center">
+                {% set nav_items = [
+                    ('/', 'home', 'Home'),
+                    ('/rooms', 'meeting_room', 'Rooms'),
+                    ('/bookings', 'bookmark', 'Bookings'),
+                    ('/schedules', 'calendar_month', 'Schedules'),
+                ] %}
+
+                {% for path, icon, label in nav_items %}
+                    <a href="{{ path }}" class="flex items-center px-6 py-2 rounded-full transition-all duration-200 
+                        {% if request.path == path %}bg-green-100 text-green-700 font-semibold
+                        {% else %}text-gray-700 hover:bg-gray-100 hover:text-green-600
+                        {% endif %}">
+                        <span class="material-symbols-rounded mr-2 text-[20px] align-middle">{{ icon }}</span>
+                        {{ label }}
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto px-4 flex-grow">
+        <div class="flex space-x-4 border-b border-gray-200 mb-6 animate-fade-in-up">
+            <button class="tab active px-4 py-2 text-green-600 border-b-2 border-green-600 font-semibold transition hover:text-green-500" data-tab="create-booking">
+                Buat Booking
+            </button>
+            <button class="tab px-4 py-2 text-gray-600 border-b-2 border-transparent font-medium transition hover:text-green-500" data-tab="booking-status">
+                Cek Status
+            </button>
+        </div>
+
+        <div class="tab-content active animate-fade-in-up" id="create-booking">
+            <section class="bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">Buat Booking Baru</h2>
+                <form id="create-booking-form" class="space-y-4 text-sm" novalidate>
+                    <div>
+                        <label for="event-select" class="block mb-1 font-medium text-gray-700">Pilih Event</label>
+                        <select id="event-select" name="event_id" required
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
+                            <option value="">-- Pilih event --</option>
+                            <!-- options diisi JS -->
+                        </select>
+                        <p id="event-error" class="text-red-600 text-sm mt-1 hidden">Event harus dipilih.</p>
+                    </div>
+
+                    <div>
+                        <label for="room-select" class="block mb-1 font-medium text-gray-700">Pilih Ruangan</label>
+                        <select id="room-select" name="room_id" required
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
+                            <option value="">-- Pilih ruangan --</option>
+                            <!-- options diisi JS -->
+                        </select>
+                        <p id="room-error" class="text-red-600 text-sm mt-1 hidden">Ruangan harus dipilih.</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="start-date" class="block mb-1 font-medium text-gray-700">Tanggal Mulai</label>
+                            <input type="date" id="start-date" name="start_date" readonly required
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" />
+                            <p id="start-date-error" class="text-red-600 text-sm mt-1 hidden">Tanggal mulai wajib diisi.</p>
+                        </div>
+                        <div>
+                            <label for="end-date" class="block mb-1 font-medium text-gray-700">Tanggal Selesai</label>
+                            <input type="date" id="end-date" name="end_date" readonly required
+                                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" />
+                            <p id="end-date-error" class="text-red-600 text-sm mt-1 hidden">Tanggal selesai wajib diisi.</p>
+                        </div>
+                    </div>
+
+                    <button type="submit"
+                        class="mt-4 bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition">
+                        <span class="material-symbols-rounded mr-2 text-[20px] align-middle">add</span>
+                        Buat Booking
+                    </button>
+                </form>
+                <div id="booking-message" class="mt-4 text-sm"></div>
+            </section>
+        </div>
+
+        <div class="tab-content hidden animate-fade-in-up" id="booking-status">
+            <section class="bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">Cek Status Booking</h2>
+                <form id="check-status-form" class="space-y-4 text-sm">
+                    <div>
+                        <label for="booking-id-input" class="block mb-1 font-medium text-gray-700">Masukkan ID Booking</label>
+                        <input type="text" id="booking-id-input" name="booking_id" placeholder=""
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
+                    </div>
+                    <div>
+                        <label for="event-name-input" class="block mb-1 font-medium text-gray-700">Masukkan Nama Event</label>
+                        <input type="text" id="event-name-input" name="event_name" placeholder=""
+                            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
+                    </div>
+                    <button type="submit"
+                        class="mt-4 bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition">
+                        <span class="material-symbols-rounded mr-2 text-[20px] align-middle">search</span>
+                        Cek Status
+                    </button>
+                </form>
+
+                <!-- Tempat hasil cek status (jika kamu ingin tetap menampilkan detailnya juga) -->
+                <div id="status-result" class="mt-4 text-sm"></div>
+
+                <!-- Tabel seluruh booking -->
+                <div id="booking-list-container" class="mt-6">
+                    <h3 class="text-lg font-semibold mb-2 text-gray-800">Daftar Semua Booking</h3>
+                    <table id="booking-list" class="w-full table-auto bg-white rounded-lg shadow-sm text-sm border">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="p-2 border text-center">ID</th>
+                                <th class="p-2 border text-center">Nama Event</th>
+                                <th class="p-2 border text-center">Nama Ruangan</th>
+                                <th class="p-2 border text-center">Tanggal Booking</th>
+                                <th class="p-2 border text-center">Tanggal Event Mulai</th>
+                                <th class="p-2 border text-center">Tanggal Event Selesai</th>
+                                <th class="p-2 border text-center">Status</th>
+                                <th class="p-2 border text-center">Keterangan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for booking in bookings %}
+                            <tr>
+                                <td class="p-3 text-center">{{ booking.booking_id }}</td>
+                                <td class="p-3 text-center">{{ booking.nama_event }}</td>
+                                <td class="p-3 text-center">{{ booking.nama_ruangan }}</td>
+                                <td class="p-3 text-center">{{ booking.tanggal_booking }}</td>
+                                <td class="p-3 text-center">{{ booking.tanggal_mulai }}</td>
+                                <td class="p-3 text-center">{{ booking.tanggal_selesai }}</td>
+                                <td class="p-3 font-semibold text-center
+                                    {% if booking.status == 'Approved' %} text-green-600
+                                    {% elif booking.status == 'Rejected' %} text-red-600
+                                    {% else %} text-yellow-600
+                                    {% endif %}">
+                                    {{ booking.status }}
+                                </td>
+                                <td class="p-3 text-center">
+                                    {% if booking.status == 'Rejected' %}
+                                        {{ booking.keterangan_reject or '-' }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="{{ 8 }}" class="text-center p-4 text-gray-500">Tidak ada bookingan</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="bg-white border-t py-4 mt-8">
+        <div class="container mx-auto px-4 text-center text-sm text-gray-600">
+            &copy; {{ current_year }} SpaceLog Tel-U. All rights reserved.
+        </div>
+    </footer>
+
+    <style>
+        @keyframes fade-in-up {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in-up {
+            animation: fade-in-up 0.8s ease-out both;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        th, td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        th {
+            background-color: #f9fafb;
+        }
+
+        th.text-center, td.text-center {
+            text-align: center !important;
+        }
+
+        /* Tambahan agar semua td di tbody tabel booking-list rata tengah */
+        #booking-list tbody td { text-align: center !important; }
+    </style>
+
+    <script>
+        let allBookings = []; // Untuk menyimpan semua booking yang dimuat
+
+        document.addEventListener('DOMContentLoaded', function () {
+            loadRooms();
+            loadEvents();
+            loadBookingsList();
+
+            // Form Create Booking
+            document.getElementById('create-booking-form').addEventListener('submit', function (e) {
+                e.preventDefault();
+                createBooking();
+            });
+
+            // Form Check Status
+            document.getElementById('check-status-form').addEventListener('submit', function (e) {
+                e.preventDefault();
+                const inputId = document.getElementById('booking-id-input').value.trim().toLowerCase();
+                const inputEvent = document.getElementById('event-name-input').value.trim().toLowerCase();
+
+                let filtered = allBookings;
+
+                if (inputId && inputEvent) {
+                    filtered = allBookings.filter(b =>
+                        b.booking_id.toString().toLowerCase().includes(inputId) &&
+                        (b.nama_event || '').toLowerCase().includes(inputEvent)
+                    );
+                } else if (inputId) {
+                    filtered = allBookings.filter(b =>
+                        b.booking_id.toString().toLowerCase().includes(inputId)
+                    );
+                } else if (inputEvent) {
+                    filtered = allBookings.filter(b =>
+                        (b.nama_event || '').toLowerCase().includes(inputEvent)
+                    );
+                }
+
+                displayBookings(filtered);
+            });
+
+            // Tab switching
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabId = tab.getAttribute('data-tab');
+
+                    tabs.forEach(t => {
+                        t.classList.remove('active', 'border-green-600', 'text-green-600', 'font-semibold');
+                        t.classList.add('text-gray-600', 'border-transparent', 'font-medium');
+                    });
+
+                    tab.classList.add('active', 'border-green-600', 'text-green-600', 'font-semibold');
+                    tab.classList.remove('text-gray-600', 'border-transparent', 'font-medium');
+
+                    tabContents.forEach(tc => {
+                        if (tc.id === tabId) {
+                            tc.classList.remove('hidden');
+                            tc.classList.add('active');
+                            // Tambahan: jika buka tab cek status, load daftar booking
+                            if (tabId === 'booking-status') {
+                                loadBookingsList();
+                            }
+                        } else {
+                            tc.classList.add('hidden');
+                            tc.classList.remove('active');
+                        }
+                    });
+                });
+            });
+        });
+
+        function loadRooms() {
+            const select = document.getElementById('room-select');
+            select.innerHTML = '<option value="">-- Pilih ruangan --</option>'; // reset dulu
+            fetch('/api/rooms')
+                .then(response => response.json())
+                .then(rooms => {
+                    if (rooms.length === 0) {
+                        select.innerHTML = '<option value="">Tidak ada ruangan tersedia.</option>';
+                        return;
+                    }
+                    rooms.forEach(room => {
+                        const option = document.createElement('option');
+                        option.value = room.room_id;
+                        option.textContent = `${room.nama_ruangan} (Kapasitas: ${room.kapasitas})`;
+                        select.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    select.innerHTML = '<option value="">Gagal memuat ruangan.</option>';
+                });
+        }
+
+        function loadEvents() {
+            const select = document.getElementById('event-select');
+            select.innerHTML = '<option value="">-- Pilih event --</option>'; // reset dulu
+
+            fetch('/api/events')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to load events');
+                    }
+                    return response.json();
+                })
+                .then(events => {
+                    if (events.length === 0) {
+                        select.innerHTML = '<option value="">Tidak ada event tersedia.</option>';
+                        return;
+                    }
+                    events.forEach(event => {
+                        const option = document.createElement('option');
+                        option.value = event.event_id;
+                        option.textContent = `${event.nama_event} (${event.tanggal_mulai} - ${event.tanggal_selesai})`;
+                        option.setAttribute('data-start', event.tanggal_mulai);
+                        option.setAttribute('data-end', event.tanggal_selesai);
+                        select.appendChild(option);
+                    });
+
+                    // Event listener untuk autofill tanggal
+                    select.addEventListener('change', function () {
+                        const selectedOption = this.options[this.selectedIndex];
+                        const start = selectedOption.getAttribute('data-start');
+                        const end = selectedOption.getAttribute('data-end');
+
+                        if (start && end) {
+                            document.getElementById('start-date').value = start;
+                            document.getElementById('end-date').value = end;
+                        } else {
+                            document.getElementById('start-date').value = '';
+                            document.getElementById('end-date').value = '';
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading events:', error);
+                    select.innerHTML = '<option value="">Gagal memuat event.</option>';
+                });
+        }
+
+        function loadBookingsList() {
+            fetch('/api/bookings') // ganti dengan endpoint yang sesuai
+                .then(response => response.json())
+                .then(bookings => {
+                    allBookings = bookings;
+                    displayBookings(bookings); // tampilkan semua booking awalnya
+                })
+                .catch(error => {
+                    console.error('Gagal memuat data booking:', error);
+                });
+        }
+
+        // Fungsi untuk menampilkan daftar booking (dengan filter opsional)
+        function displayBookings(filteredBookings) {
+            const tbody = document.querySelector('#booking-list tbody');
+            tbody.innerHTML = '';
+
+            if (filteredBookings.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-gray-500">Tidak ada data booking ditemukan.</td></tr>`;
+                return;
+            }
+
+            filteredBookings.forEach(b => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="p-2 border text-center">${b.booking_id}</td>
+                    <td class="p-2 border text-center">${b.nama_event || '-'}</td>
+                    <td class="p-2 border text-center">${b.nama_ruangan || '-'}</td>
+                    <td class="p-2 border text-center">${b.tanggal_booking || '-'}</td>
+                    <td class="p-2 border text-center">${b.tanggal_mulai || '-'}</td>
+                    <td class="p-2 border text-center">${b.tanggal_selesai || '-'}</td>
+                    <td class="p-2 border ${b.status === 'Rejected' ? 'text-red-600' : b.status === 'Approved' ? 'text-green-600' : 'text-yellow-600'} text-center">
+                        ${b.status}
+                    </td>
+                    <td class="p-2 border text-center">${b.status === 'Rejected' ? (b.keterangan_reject || 'Tidak ada keterangan') : '-'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function createBooking() {
+            const eventSelect = document.getElementById('event-select');
+            const roomSelect = document.getElementById('room-select');
+            const startDate = document.getElementById('start-date');
+            const endDate = document.getElementById('end-date');
+            const message = document.getElementById('booking-message');
+
+            // Reset pesan error
+            document.querySelectorAll('p[id$="-error"]').forEach(el => el.classList.add('hidden'));
+
+            let valid = true;
+
+            // Validasi event
+            if (!eventSelect.value) {
+                document.getElementById('event-error').classList.remove('hidden');
+                valid = false;
+            }
+
+            // Validasi room
+            if (!roomSelect.value) {
+                document.getElementById('room-error').classList.remove('hidden');
+                valid = false;
+            }
+
+            // Validasi tanggal
+            if (!startDate.value) {
+                document.getElementById('start-date-error').classList.remove('hidden');
+                valid = false;
+            }
+            if (!endDate.value) {
+                document.getElementById('end-date-error').classList.remove('hidden');
+                valid = false;
+            }
+
+            if (!valid) {
+                message.textContent = "Mohon isi semua field dengan benar.";
+                message.className = "text-red-600";
+                return;
+            }
+
+            // Jika valid, submit via fetch API
+            const data = {
+                event_id: parseInt(eventSelect.value),
+                room_id: parseInt(roomSelect.value)
+            };
+
+            console.log('Sending booking request:', data); // Debug log
+
+            fetch('/api/book-room', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            })
+            .then(async res => {
+                const text = await res.text();
+                console.log('Response dari server:', text); // Debug log
+                try {
+                    return JSON.parse(text);
+                } catch {
+                    throw new Error('Response bukan JSON valid');
+                }
+            })
+            .then(res => {
+                if (res.success || res.message === 'Booking created successfully') {
+                    message.textContent = "Booking berhasil dibuat!";
+                    message.className = "text-green-600";
+                    document.getElementById('create-booking-form').reset();
+                    startDate.value = '';
+                    endDate.value = '';
+                    loadBookingsList();
+                } else {
+                    const errorMsg = res.error || res.message || "Error tidak diketahui";
+                    console.error('Booking error:', errorMsg); // Debug log
+                    message.textContent = "Gagal membuat booking: " + errorMsg;
+                    message.className = "text-red-600";
+                }
+            })
+            .catch(err => {
+                console.error('Booking error:', err); // Debug log
+                message.textContent = "Error saat membuat booking: " + err.message;
+                message.className = "text-red-600";
+            });
+        }
+
+        function checkStatus() {
+            const bookingId = document.getElementById('booking-select').value;
+            const result = document.getElementById('status-result');
+            if (!bookingId) {
+                result.innerHTML = '<p class="text-red-600">Silakan pilih booking terlebih dahulu.</p>';
+                return;
+            }
+
+            result.innerHTML = '<p class="text-gray-500">Memeriksa status...</p>';
+
+            fetch(`/api/bookings/${bookingId}`)
+                .then(response => response.json())
+                .then(booking => {
+                    if (booking.error) {
+                        result.innerHTML = `<p class="text-red-600">${booking.error}</p>`;
+                    } else {
+                        result.innerHTML = `
+                            <div class="bg-gray-50 p-4 rounded-md border border-gray-200 space-y-2">
+                                <p><strong>Booking ID:</strong> ${booking.booking_id}</p>
+                                <p><strong>Event ID:</strong> ${booking.event_id}</p>
+                                <p><strong>Room ID:</strong> ${booking.room_id}</p>
+                                <p><strong>Tanggal Booking:</strong> ${booking.tanggal_booking}</p>
+                                <p><strong>Status:</strong> <span class="font-semibold text-green-600">${booking.status}</span></p>
+                            </div>
+                            <p class="mt-2"><strong>Alasan Penolakan:</strong> ${booking.keterangan_reject || 'Tidak ada'}</p>
+                        `;
+                    }
+                })
+                .catch(() => {
+                    result.innerHTML = '<p class="text-red-600">Gagal memeriksa status booking.</p>';
+                });
+        };
+    </script>
+</body>
+</html>

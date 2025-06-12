@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Kemahasiswaan - Ditmawa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #fa7d7d 0%, #E55050 100%);
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg text-white shadow-lg">
+        <nav class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <img src="{{ url_for('static', filename='images.png') }}" alt="Logo" class="h-12 w-12 rounded-lg shadow-md">
+                    <h1 class="text-2xl font-bold">Dashboard Kemahasiswaan</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="bg-white/10 px-4 py-2 rounded-full text-sm font-medium">Ditmawa Portal</span>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Welcome Section -->
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-2">Welcome to Event Management</h2>
+            <p class="text-gray-600">Manage and monitor all event proposals in one place</p>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="stat-card rounded-xl shadow-lg p-6 card-hover">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                        <span class="material-icons text-2xl">event</span>
+                    </div>
+                    <div class="ml-4">
+                        <h2 class="text-gray-600 text-sm font-medium">Total Events</h2>
+                        <p class="text-2xl font-bold text-gray-800" id="totalEvents">-</p>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card rounded-xl shadow-lg p-6 card-hover">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                        <span class="material-icons text-2xl">pending</span>
+                    </div>
+                    <div class="ml-4">
+                        <h2 class="text-gray-600 text-sm font-medium">Pending Approval</h2>
+                        <p class="text-2xl font-bold text-gray-800" id="pendingEvents">-</p>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card rounded-xl shadow-lg p-6 card-hover">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100 text-green-600">
+                        <span class="material-icons text-2xl">check_circle</span>
+                    </div>
+                    <div class="ml-4">
+                        <h2 class="text-gray-600 text-sm font-medium">Approved Events</h2>
+                        <p class="text-2xl font-bold text-gray-800" id="approvedEvents">-</p>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-card rounded-xl shadow-lg p-6 card-hover">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-red-100 text-red-600">
+                        <span class="material-icons text-2xl">cancel</span>
+                    </div>
+                    <div class="ml-4">
+                        <h2 class="text-gray-600 text-sm font-medium">Rejected Events</h2>
+                        <p class="text-2xl font-bold text-gray-800" id="rejectedEvents">-</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="bg-white rounded-xl shadow-lg mb-8 overflow-hidden">
+            <div class="border-b">
+                <nav class="flex -mb-px">
+                    <button class="tab-button active px-6 py-4 text-sm font-medium text-blue-600 border-b-2 border-blue-600 flex items-center" data-tab="pending-approval">
+                        <span class="material-icons mr-2 text-lg">pending_actions</span>
+                        Pending Approval
+                    </button>
+                    <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-gray-700 flex items-center" data-tab="all-events">
+                        <span class="material-icons mr-2 text-lg">event_note</span>
+                        All Events
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Pending Approval Tab Content -->
+            <div id="pending-approval" class="tab-content p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                        <span class="material-icons mr-2 text-blue-600">pending_actions</span>
+                        Events Pending Approval
+                    </h2>
+                    <div class="flex space-x-4">
+                        <div class="relative">
+                            <span class="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">search</span>
+                            <input type="text" id="pendingSearch" placeholder="Search events..." 
+                                class="pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                        </div>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pendingEventsTableBody" class="bg-white divide-y divide-gray-200">
+                            <!-- Pending events will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- All Events Tab Content -->
+            <div id="all-events" class="tab-content hidden p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                        <span class="material-icons mr-2 text-blue-600">event_note</span>
+                        All Events
+                    </h2>
+                    <div class="flex space-x-4">
+                        <select id="eventStatusFilter" class="border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                            <option value="all">All Status</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Approved">Approved</option>
+                            <option value="Rejected">Rejected</option>
+                        </select>
+                        <div class="relative">
+                            <span class="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">search</span>
+                            <input type="text" id="allEventsSearch" placeholder="Search events..." 
+                                class="pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                        </div>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="allEventsTableBody" class="bg-white divide-y divide-gray-200">
+                            <!-- All events will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t py-6 mt-8">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-sm text-gray-600">&copy; {{ current_year }} Kemahasiswaan Telkom University. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Event Details Modal -->
+    <div id="eventDetailsModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full">
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-xl font-semibold text-gray-900 flex items-center">
+                            <span class="material-icons mr-2 text-blue-600">event</span>
+                            Event Details
+                        </h3>
+                        <button onclick="closeEventDetailsModal()" class="text-gray-400 hover:text-gray-500">
+                            <span class="material-icons">close</span>
+                        </button>
+                    </div>
+                    <div id="eventDetailsContent" class="space-y-4">
+                        <!-- Event details will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rejection Modal -->
+    <div id="rejectionModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-xl shadow-xl max-w-lg w-full">
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-xl font-semibold text-gray-900 flex items-center">
+                            <span class="material-icons mr-2 text-red-600">cancel</span>
+                            Reject Event
+                        </h3>
+                        <button onclick="closeRejectionModal()" class="text-gray-400 hover:text-gray-500">
+                            <span class="material-icons">close</span>
+                        </button>
+                    </div>
+                    <form id="rejectionForm" class="space-y-4">
+                        <input type="hidden" id="rejectEventId">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Reason for Rejection</label>
+                            <textarea id="rejectionReason" rows="4" required
+                                class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"></textarea>
+                        </div>
+                        <div class="flex justify-end space-x-4">
+                            <button type="button" onclick="closeRejectionModal()"
+                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
+                                Cancel
+                            </button>
+                            <button type="submit"
+                                class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition">
+                                Reject Event
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                // Update button styles
+                document.querySelectorAll('.tab-button').forEach(btn => {
+                    btn.classList.remove('active', 'text-blue-600', 'border-blue-600');
+                    btn.classList.add('text-gray-500');
+                });
+                button.classList.add('active', 'text-blue-600', 'border-blue-600');
+                button.classList.remove('text-gray-500');
+
+                // Show selected content
+                const tabId = button.getAttribute('data-tab');
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.add('hidden');
+                });
+                document.getElementById(tabId).classList.remove('hidden');
+
+                // Load data for the selected tab
+                if (tabId === 'pending-approval') {
+                    loadPendingEvents();
+                } else if (tabId === 'all-events') {
+                    loadAllEvents();
+                }
+            });
+        });
+
+        // Load Pending Events
+        async function loadPendingEvents() {
+            try {
+                const response = await fetch('/api/events/pending');
+                const events = await response.json();
+                
+                // Update pending events counter
+                const pendingCount = events.length;
+                document.getElementById('pendingEvents').textContent = pendingCount;
+
+                const tableBody = document.getElementById('pendingEventsTableBody');
+                tableBody.innerHTML = '';
+
+                events.forEach(event => {
+                    // Handle field mapping jika backend pakai nama berbeda
+                    const eventId = event.id || event.event_id;
+                    const eventName = event.event_name || event.nama_event || '-';
+                    const eventDescription = event.description || event.deskripsi || '-';
+                    const eventDate = event.date || event.tanggal_mulai || event.tanggal || '-';
+                    const status = event.status || event.status_approval || '-';
+
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">${eventName}</div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm text-gray-900">${eventDescription}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">${eventDate ? new Date(eventDate).toLocaleDateString() : '-'}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            ${status === 'Pending' ? `
+                                <button onclick="approveEvent(${eventId})" class="text-green-600 hover:text-green-900 mr-3">Approve</button>
+                                <button onclick="showRejectionModal(${eventId})" class="text-red-600 hover:text-red-900 mr-3">Reject</button>
+                            ` : ''}
+                            <button onclick="viewEventDetails(${eventId})" class="text-blue-600 hover:text-blue-900">
+                                <span class="material-icons text-sm align-middle">visibility</span>
+                                Detail
+                            </button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error loading pending events:', error);
+            }
+        }
+
+        // Load All Events
+        async function loadAllEvents() {
+            try {
+                const response = await fetch('/api/events');
+                const events = await response.json();
+                
+                // Update stats with proper counting
+                const totalEvents = events.length;
+                const approvedEvents = events.filter(e => {
+                    const status = e.status || e.status_approval;
+                    return status === 'Approved';
+                }).length;
+                const rejectedEvents = events.filter(e => {
+                    const status = e.status || e.status_approval;
+                    return status === 'Rejected';
+                }).length;
+                const pendingEvents = events.filter(e => {
+                    const status = e.status || e.status_approval;
+                    return status === 'Pending';
+                }).length;
+
+                document.getElementById('totalEvents').textContent = totalEvents;
+                document.getElementById('approvedEvents').textContent = approvedEvents;
+                document.getElementById('rejectedEvents').textContent = rejectedEvents;
+                document.getElementById('pendingEvents').textContent = pendingEvents;
+
+                const tableBody = document.getElementById('allEventsTableBody');
+                tableBody.innerHTML = '';
+
+                const statusFilter = document.getElementById('eventStatusFilter').value;
+                const searchTerm = document.getElementById('allEventsSearch').value.toLowerCase();
+
+                const filteredEvents = events.filter(event => {
+                    const eventId = event.id || event.event_id;
+                    const eventName = event.event_name || event.nama_event || '';
+                    const eventDescription = event.description || event.deskripsi || '';
+                    const status = event.status || event.status_approval || '';
+                    const matchesStatus = statusFilter === 'all' || status === statusFilter;
+                    const matchesSearch = (typeof eventName === 'string' && eventName.toLowerCase().includes(searchTerm)) ||
+                                         (typeof eventDescription === 'string' && eventDescription.toLowerCase().includes(searchTerm));
+                    return matchesStatus && matchesSearch;
+                });
+
+                filteredEvents.forEach(event => {
+                    // Handle field mapping jika backend pakai nama berbeda
+                    const eventId = event.id || event.event_id;
+                    const eventName = event.event_name || event.nama_event || '-';
+                    const eventDescription = event.description || event.deskripsi || '-';
+                    const eventDate = event.date || event.tanggal_mulai || event.tanggal || '-';
+                    const status = event.status || event.status_approval || '-';
+
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">${eventName}</div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm text-gray-900">${eventDescription}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">${eventDate ? new Date(eventDate).toLocaleDateString() : '-'}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                ${status === 'Approved' ? 'bg-green-100 text-green-800' : 
+                                  status === 'Rejected' ? 'bg-red-100 text-red-800' : 
+                                  'bg-yellow-100 text-yellow-800'}">
+                                ${status}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            ${status === 'Pending' ? `
+                                <button onclick="approveEvent(${eventId})" class="text-green-600 hover:text-green-900 mr-3">
+                                    <span class="material-icons text-sm align-middle">check_circle</span>
+                                    Approve
+                                </button>
+                                <button onclick="showRejectionModal(${eventId})" class="text-red-600 hover:text-red-900 mr-3">
+                                    <span class="material-icons text-sm align-middle">cancel</span>
+                                    Reject
+                                </button>
+                            ` : ''}
+                            <button onclick="viewEventDetails(${eventId})" class="text-blue-600 hover:text-blue-900">
+                                <span class="material-icons text-sm align-middle">visibility</span>
+                                Detail
+                            </button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error loading all events:', error);
+            }
+        }
+
+        // View Event Details
+        async function viewEventDetails(eventId) {
+            try {
+                const response = await fetch(`/api/events/${eventId}`);
+                const event = await response.json();
+
+                const detailsContent = document.getElementById('eventDetailsContent');
+                detailsContent.innerHTML = `
+                    <div class="space-y-6">
+                        <!-- Header Section -->
+                        <div class="flex items-center justify-between pb-4 border-b">
+                            <div>
+                                <h4 class="text-lg font-semibold text-gray-900">${event.event_name || event.nama_event || '-'}</h4>
+                                <p class="text-sm text-gray-500">Event ID: ${event.event_id || event.id || '-'}</p>
+                            </div>
+                        </div>
+
+                        <!-- Main Content -->
+                        <div class="grid grid-cols-2 gap-6">
+                            <!-- Left Column -->
+                            <div class="space-y-4">
+                                <div class="card-hover bg-gray-50 p-4 rounded-lg">
+                                    <h4 class="text-sm font-medium text-gray-500">Description</h4>
+                                    <p class="mt-1 text-sm text-gray-900">${event.description || event.deskripsi || '-'}</p>
+                                </div>
+                                
+                                <div class="card-hover bg-gray-50 p-4 rounded-lg">
+                                    <h4 class="text-sm font-medium text-gray-500">Event Period</h4>
+                                    <div class="mt-2 space-y-2">
+                                        <div class="flex items-center text-sm">
+                                            <span class="material-icons text-gray-400 mr-2 text-sm">event</span>
+                                            <span class="text-gray-600">Start:</span>
+                                            <span class="ml-2 text-gray-900">${event.date || event.tanggal_mulai || event.tanggal ? new Date(event.date || event.tanggal_mulai || event.tanggal).toLocaleDateString() : '-'}</span>
+                                        </div>
+                                        <div class="flex items-center text-sm">
+                                            <span class="material-icons text-gray-400 mr-2 text-sm">event</span>
+                                            <span class="text-gray-600">End:</span>
+                                            <span class="ml-2 text-gray-900">${event.tanggal_selesai ? new Date(event.tanggal_selesai).toLocaleDateString() : '-'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right Column -->
+                            <div class="space-y-4">
+                                ${event.rejection_reason ? `
+                                    <div class="card-hover bg-red-50 p-4 rounded-lg">
+                                        <div class="flex items-center mb-2">
+                                            <span class="material-icons text-red-500 mr-2 text-sm">error</span>
+                                            <h4 class="text-sm font-medium text-red-500">Rejection Reason</h4>
+                                        </div>
+                                        <p class="text-sm text-red-600">${event.rejection_reason}</p>
+                                    </div>
+                                ` : ''}
+                                
+                                ${event.keterangan_reject ? `
+                                    <div class="card-hover bg-red-50 p-4 rounded-lg">
+                                        <div class="flex items-center mb-2">
+                                            <span class="material-icons text-red-500 mr-2 text-sm">note</span>
+                                            <h4 class="text-sm font-medium text-red-500">Rejection Notes</h4>
+                                        </div>
+                                        <p class="text-sm text-red-600">${event.keterangan_reject}</p>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('eventDetailsModal').classList.remove('hidden');
+            } catch (error) {
+                console.error('Error loading event details:', error);
+                alert('Failed to load event details. Please try again.');
+            }
+        }
+
+        // Close Event Details Modal
+        function closeEventDetailsModal() {
+            document.getElementById('eventDetailsModal').classList.add('hidden');
+        }
+
+        // Approve Event
+        async function approveEvent(eventId) {
+            try {
+                const response = await fetch(`/api/events/${eventId}/approve`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status: 'Approved' })
+                });
+
+                if (response.ok) {
+                    closeEventDetailsModal();
+                    loadPendingEvents();
+                    loadAllEvents();
+                } else {
+                    console.error('Failed to approve event');
+                }
+            } catch (error) {
+                console.error('Error approving event:', error);
+            }
+        }
+
+        // Show Rejection Modal
+        function showRejectionModal(eventId) {
+            document.getElementById('rejectEventId').value = eventId;
+            document.getElementById('rejectionModal').classList.remove('hidden');
+        }
+
+        // Close Rejection Modal
+        function closeRejectionModal() {
+            document.getElementById('rejectionModal').classList.add('hidden');
+            document.getElementById('rejectionForm').reset();
+        }
+
+        // Handle Rejection Form Submit
+        document.getElementById('rejectionForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const eventId = document.getElementById('rejectEventId').value;
+            const reason = document.getElementById('rejectionReason').value;
+
+            try {
+                const response = await fetch(`/api/events/${eventId}/reject`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        status: 'Rejected',
+                        rejection_reason: reason
+                    })
+                });
+
+                if (response.ok) {
+                    closeRejectionModal();
+                    closeEventDetailsModal();
+                    loadPendingEvents();
+                    loadAllEvents();
+                } else {
+                    console.error('Failed to reject event');
+                }
+            } catch (error) {
+                console.error('Error rejecting event:', error);
+            }
+        });
+
+        // Search and filter handlers
+        document.getElementById('pendingSearch').addEventListener('input', loadPendingEvents);
+        document.getElementById('allEventsSearch').addEventListener('input', loadAllEvents);
+        document.getElementById('eventStatusFilter').addEventListener('change', loadAllEvents);
+
+        // Load initial data
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPendingEvents();
+            loadAllEvents();
+        });
+    </script>
+</body>
+</html> 

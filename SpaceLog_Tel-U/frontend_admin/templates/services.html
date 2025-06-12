@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SpaceLog Tel-U | Service List</title>
+    <link rel="shortcut icon" href="{{ url_for('static', filename='icon.png') }}" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-100 text-gray-900 min-h-screen flex flex-col">
+    <nav class="bg-white shadow mb-6 sticky top-0 z-50">
+      <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+        <a href="{{ url_for('index') }}" class="flex items-center space-x-2 transition transform hover:scale-105">
+          <img src="{{ url_for('static', filename='icon.png') }}" alt="Logo" class="w-10 h-10" />
+          <span class="text-lg font-bold text-green-600">Admin SpaceLog Tel-U</span>
+        </a>
+
+        <div class="space-x-2 flex items-center">
+          {% set nav_items = [
+            ('/', 'dashboard', 'Dashboard'),
+            ('/approval', 'task_alt', 'Approval Booking'),
+            ('/services', 'build', 'Layanan Website'),
+          ] %}
+
+          {% for path, icon, label in nav_items %}
+            <a href="{{ path }}" class="flex items-center px-6 py-2 rounded-full transition-all duration-200 
+              {% if request.path == path %}bg-green-100 text-green-700 font-semibold
+              {% else %}text-gray-700 hover:bg-gray-100 hover:text-green-600
+              {% endif %}">
+              <span class="material-symbols-rounded mr-2 text-[20px] align-middle">{{ icon }}</span>
+              {{ label }}
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+    </nav>
+
+    <main class="container mx-auto px-4 flex-grow">
+      <div class="bg-white p-6 rounded-lg shadow mb-6 animate-fade-in-up">
+        <h2 class="text-2xl font-semibold mb-4">Daftar Layanan Website</h2>
+        <p class="mb-4 text-gray-700">Website ini menyediakan berbagai layanan manajemen ruangan:</p>
+          <ul class="list-disc list-inside text-gray-800 space-y-2">
+            <li><strong>Room Availability Service (User):</strong> Lihat dan tambah data ruangan (via GraphQL), serta detail tiap ruangan.</li>
+            <li><strong>Room Recommendation Service (User):</strong> Rekomendasi ruangan sesuai kapasitas, lokasi, dan kriteria lainnya.</li>
+            <li><strong>Room Booking Service (User):</strong> Booking ruangan untuk event yang disetujui, lihat status booking (Pending/Approved/Rejected), detail, dan cari berdasarkan ID.</li>
+            <li><strong>Room Schedule Service (User):</strong> Lihat jadwal penggunaan ruangan per tanggal dan jam, termasuk status dan nama acara.</li>
+            <li><strong>Booking Confirmation Service (Admin):</strong> Tinjau semua booking, ubah status ke Approved/Rejected (dengan alasan), dan status tidak bisa diubah lagi setelah itu.</li>
+          </ul>
+      </div>
+
+      <div class="bg-white p-6 rounded-lg shadow animate-fade-in-up">
+        <h2 class="text-2xl font-semibold mb-4">Status Layanan</h2>
+        <div id="service-status">
+          <p class="text-gray-500">Memuat status layanan...</p>
+        </div>
+      </div>
+    </main>
+
+    <footer class="bg-white border-t py-4 mt-8">
+      <div class="container mx-auto px-4 text-center text-sm text-gray-600">&copy; {{ current_year }} SpaceLog Tel-U. All rights reserved.</div>
+    </footer>
+
+    <style>
+      @keyframes fade-in-up {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .animate-fade-in-up {
+        animation: fade-in-up 0.8s ease-out both;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+      }
+
+      th,
+      td {
+        text-align: left;
+        padding: 0.75rem;
+        border-bottom: 1px solid #e5e7eb;
+      }
+
+      th {
+        background-color: #f9fafb;
+      }
+    </style>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const statusDiv = document.getElementById("service-status");
+        statusDiv.innerHTML = '<p class="text-gray-500">Memeriksa status layanan...</p>';
+
+        const services = [
+          { 
+            name: "Room Availability Service", 
+            url: "http://localhost:5001/health",
+            description: "Layanan untuk mengelola ketersediaan dan informasi ruangan"
+          },
+          { 
+            name: "Room Recommendation Service", 
+            url: "http://localhost:5002/health",
+            description: "Layanan untuk memberikan rekomendasi ruangan"
+          },
+          { 
+            name: "Room Booking Service", 
+            url: "http://localhost:5003/health",
+            description: "Layanan untuk mengelola pemesanan ruangan"
+          },
+          { 
+            name: "Booking Confirmation Service", 
+            url: "http://localhost:5006/health",
+            description: "Layanan untuk konfirmasi pemesanan"
+          },
+          { 
+            name: "Room Schedule Service", 
+            url: "http://localhost:5004/health",
+            description: "Layanan untuk mengelola jadwal ruangan"
+          },
+        ];
+
+        const table = document.createElement("table");
+        table.className = "w-full border border-gray-200 mt-4 text-sm";
+
+        table.innerHTML = `
+            <thead class="bg-gray-100 text-gray-700">
+            <tr>
+                <th class="px-4 py-2 border-b text-left">Layanan</th>
+                <th class="px-4 py-2 border-b text-left">Deskripsi</th>
+                <th class="px-4 py-2 border-b text-left">Status</th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+        `;
+
+        const tbody = table.querySelector("tbody");
+
+        services.forEach((service) => {
+          const row = document.createElement("tr");
+          const statusId = service.name.replace(/ /g, "-").toLowerCase() + "-status";
+
+          row.innerHTML = `
+            <td class="px-4 py-2 border-b font-medium">${service.name}</td>
+            <td class="px-4 py-2 border-b text-gray-600">${service.description}</td>
+            <td class="px-4 py-2 border-b" id="${statusId}">
+              <div class="flex items-center">
+                <div class="w-3 h-3 rounded-full bg-gray-300 mr-2"></div>
+                <span>Checking...</span>
+              </div>
+            </td>
+            `;
+          tbody.appendChild(row);
+
+          checkServiceStatus(service.url, statusId);
+        });
+
+        statusDiv.innerHTML = "";
+        statusDiv.appendChild(table);
+
+        // Check status every 30 seconds
+        setInterval(() => {
+          services.forEach(service => {
+            const statusId = service.name.replace(/ /g, "-").toLowerCase() + "-status";
+            checkServiceStatus(service.url, statusId);
+          });
+        }, 30000);
+      });
+
+      function checkServiceStatus(url, statusId) {
+        fetch(url)
+          .then(response => {
+            const cell = document.getElementById(statusId);
+            if (response.ok) {
+              cell.innerHTML = `
+                <div class="flex items-center">
+                  <div class="w-3 h-3 rounded-full bg-green-500 mr-2 animate-pulse"></div>
+                  <span class="text-green-700 font-medium">Online</span>
+                </div>`;
+            } else {
+              cell.innerHTML = `
+                <div class="flex items-center">
+                  <div class="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                  <span class="text-red-700 font-medium">Offline</span>
+                </div>`;
+            }
+          })
+          .catch(() => {
+            const cell = document.getElementById(statusId);
+            cell.innerHTML = `
+              <div class="flex items-center">
+                <div class="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                <span class="text-red-700 font-medium">Offline</span>
+              </div>`;
+          });
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,402 @@
+<!-- File: dashboard.html -->
+
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Kemahasiswaan - User</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #fa7d7d 0%, #E55050 100%);
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="gradient-bg text-white shadow-lg">
+        <nav class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <img src="{{ url_for('static', filename='images.png') }}" alt="Logo" class="h-12 w-12 rounded-lg shadow-md">
+                    <h1 class="text-2xl font-bold">Ajuan Event</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="bg-white/10 px-4 py-2 rounded-full text-sm font-medium">User Portal</span>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8 flex-grow">
+        <!-- Welcome Section -->
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-2">Welcome to Event Portal</h2>
+            <p class="text-gray-600">Submit and manage your event proposals easily</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="bg-white rounded-xl shadow-lg mb-8 overflow-hidden">
+            <div class="border-b">
+                <nav class="flex -mb-px">
+                    <button class="tab-button active px-6 py-4 text-sm font-medium text-blue-600 border-b-2 border-blue-600 flex items-center" data-tab="submit-event">
+                        <span class="material-icons mr-2 text-lg">add_circle</span>
+                        Submit Event
+                    </button>
+                    <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-gray-700 flex items-center" data-tab="event-status">
+                        <span class="material-icons mr-2 text-lg">event_available</span>
+                        Event Status
+                    </button>
+                    <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-gray-700 flex items-center" data-tab="room-booking">
+                        <span class="material-icons mr-2 text-lg">meeting_room</span>
+                        Room Booking
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Submit Event Tab Content -->
+            <div id="submit-event" class="tab-content p-8">
+                <div class="max-w-2xl mx-auto">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+                        <span class="material-icons mr-2 text-blue-600">add_circle</span>
+                        Submit New Event Proposal
+                    </h2>
+                    <form id="eventSubmissionForm" class="space-y-6">
+                        <div class="card-hover bg-white p-6 rounded-lg border border-gray-100">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Event Name</label>
+                            <input type="text" name="nama_event" required
+                                class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                        </div>
+                        <div class="card-hover bg-white p-6 rounded-lg border border-gray-100">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                            <textarea name="deskripsi" rows="4" required
+                                class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"></textarea>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="card-hover bg-white p-6 rounded-lg border border-gray-100">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                                <input type="date" name="tanggal_mulai" required
+                                    class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                            </div>
+                            <div class="card-hover bg-white p-6 rounded-lg border border-gray-100">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                                <input type="date" name="tanggal_selesai" required
+                                    class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                            </div>
+                        </div>
+                        <div class="flex justify-end">
+                            <button type="submit"
+                                class="gradient-bg text-white px-8 py-3 rounded-lg hover:opacity-90 transition flex items-center shadow-lg">
+                                <span class="material-icons mr-2">send</span>
+                                Submit Proposal
+                            </button>
+                        </div>
+                    </form>
+                    <div id="submissionMessage" class="mt-4 text-center"></div>
+                    <div id="eventIdDisplay" class="mt-4 p-6 bg-blue-50 rounded-lg hidden border border-blue-100">
+                        <p class="text-sm text-gray-600">Your Event ID: <span id="eventIdValue" class="font-semibold text-blue-700"></span></p>
+                        <p class="text-xs text-gray-500 mt-1">Please save this ID to track your event status and room booking</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Event Status Tab Content -->
+            <div id="event-status" class="tab-content hidden p-8">
+                <div class="max-w-2xl mx-auto">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+                        <span class="material-icons mr-2 text-blue-600">event_available</span>
+                        Check Event Status
+                    </h2>
+                    <div class="card-hover bg-white rounded-lg shadow p-6">
+                        <form id="eventStatusForm" class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Enter Your Event ID</label>
+                                <input type="text" id="eventIdInput" required
+                                    class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                                    placeholder="Example: 12345">
+                            </div>
+                            <div class="flex justify-end">
+                                <button type="submit"
+                                    class="gradient-bg text-white px-8 py-3 rounded-lg hover:opacity-90 transition flex items-center shadow-lg">
+                                    <span class="material-icons mr-2">search</span>
+                                    Check Status
+                                </button>
+                            </div>
+                        </form>
+                        <div id="eventStatusResult" class="mt-6 hidden">
+                            <div class="border-t pt-6">
+                                <h3 class="text-lg font-medium text-gray-900 mb-4">Event Details</h3>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="card-hover bg-gray-50 p-4 rounded-lg">
+                                        <p class="text-sm font-medium text-gray-500">Event ID</p>
+                                        <p id="resultEventId" class="mt-1 font-semibold">-</p>
+                                    </div>
+                                    <div class="card-hover bg-gray-50 p-4 rounded-lg">
+                                        <p class="text-sm font-medium text-gray-500">Status</p>
+                                        <p id="resultStatus" class="mt-1">-</p>
+                                    </div>
+                                    <div class="col-span-2 card-hover bg-gray-50 p-4 rounded-lg">
+                                        <p class="text-sm font-medium text-gray-500">Event Name</p>
+                                        <p id="resultEventName" class="mt-1">-</p>
+                                    </div>
+                                    <div class="col-span-2 card-hover bg-gray-50 p-4 rounded-lg">
+                                        <p class="text-sm font-medium text-gray-500">Description</p>
+                                        <p id="resultDescription" class="mt-1">-</p>
+                                    </div>
+                                    <div class="card-hover bg-gray-50 p-4 rounded-lg">
+                                        <p class="text-sm font-medium text-gray-500">Start Date</p>
+                                        <p id="resultStartDate" class="mt-1">-</p>
+                                    </div>
+                                    <div class="card-hover bg-gray-50 p-4 rounded-lg">
+                                        <p class="text-sm font-medium text-gray-500">End Date</p>
+                                        <p id="resultEndDate" class="mt-1">-</p>
+                                    </div>
+                                    <div id="resultRejectionReason" class="col-span-2 hidden card-hover bg-red-50 p-4 rounded-lg">
+                                        <p class="text-sm font-medium text-red-500">Rejection Reason</p>
+                                        <p class="mt-1 text-red-600">-</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Room Booking Tab Content -->
+            <div id="room-booking" class="tab-content hidden p-8">
+                <div class="max-w-4xl mx-auto">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-6 flex items-center">
+                        <span class="material-icons mr-2 text-blue-600">meeting_room</span>
+                        Check Room Booking Status
+                    </h2>
+                    <div class="card-hover bg-white rounded-lg shadow p-6 mb-8">
+                        <form id="roomBookingForm" class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Enter Your Event ID</label>
+                                <input type="text" id="roomBookingEventIdInput" required
+                                    class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                                    placeholder="Example: 1749741054">
+                            </div>
+                            <div class="flex justify-end">
+                                <button type="submit"
+                                    class="gradient-bg text-white px-8 py-3 rounded-lg hover:opacity-90 transition flex items-center shadow-lg">
+                                    <span class="material-icons mr-2">search</span>
+                                    Check Status
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div id="roomBookingResult" class="bg-white rounded-lg shadow overflow-hidden hidden">
+                        <div class="p-6">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Room Booking Details</h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="card-hover bg-gray-50 p-4 rounded-lg">
+                                    <p class="text-sm font-medium text-gray-500">Room Name</p>
+                                    <p id="resultRoomName" class="mt-1 font-semibold">-</p>
+                                </div>
+                                <div class="card-hover bg-gray-50 p-4 rounded-lg">
+                                    <p class="text-sm font-medium text-gray-500">Capacity</p>
+                                    <p id="resultRoomCapacity" class="mt-1">-</p>
+                                </div>
+                                <div class="col-span-2 card-hover bg-gray-50 p-4 rounded-lg">
+                                    <p class="text-sm font-medium text-gray-500">Location</p>
+                                    <p id="resultRoomLocation" class="mt-1">-</p>
+                                </div>
+                                <div class="card-hover bg-gray-50 p-4 rounded-lg">
+                                    <p class="text-sm font-medium text-gray-500">Booking Date</p>
+                                    <p id="resultBookingDate" class="mt-1">-</p>
+                                </div>
+                                <div class="card-hover bg-gray-50 p-4 rounded-lg">
+                                    <p class="text-sm font-medium text-gray-500">Status</p>
+                                    <p id="resultBookingStatus" class="mt-1">-</p>
+                                </div>
+                                <div class="card-hover bg-gray-50 p-4 rounded-lg">
+                                    <p class="text-sm font-medium text-gray-500">Start Date</p>
+                                    <p id="resultBookingStartDate" class="mt-1">-</p>
+                                </div>
+                                <div class="card-hover bg-gray-50 p-4 rounded-lg">
+                                    <p class="text-sm font-medium text-gray-500">End Date</p>
+                                    <p id="resultBookingEndDate" class="mt-1">-</p>
+                                </div>
+                                <div id="resultBookingNotes" class="col-span-2 hidden card-hover bg-red-50 p-4 rounded-lg">
+                                    <p class="text-sm font-medium text-red-500">Notes</p>
+                                    <p class="mt-1 text-red-600">-</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t py-6 mt-auto">
+        <div class="container mx-auto px-4 text-center">
+            <p class="text-sm text-gray-600">© {{ current_year }} Kemahasiswaan Telkom University. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Tab switching
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.tab-button').forEach(btn => {
+                    btn.classList.remove('active', 'text-blue-600', 'border-blue-600');
+                    btn.classList.add('text-gray-500');
+                });
+                button.classList.add('active', 'text-blue-600', 'border-blue-600');
+                button.classList.remove('text-gray-500');
+
+                const tabId = button.getAttribute('data-tab');
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.add('hidden');
+                });
+                document.getElementById(tabId).classList.remove('hidden');
+            });
+        });
+
+        // Event Submission Form
+        document.getElementById('eventSubmissionForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const form = e.target;
+            const messageDiv = document.getElementById('submissionMessage');
+            const eventIdDisplay = document.getElementById('eventIdDisplay');
+            const eventIdValue = document.getElementById('eventIdValue');
+
+            try {
+                const formData = new FormData(form);
+                const data = Object.fromEntries(formData.entries());
+
+                const response = await fetch('/api/events', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    messageDiv.textContent = 'Event proposal submitted successfully!';
+                    messageDiv.className = 'mt-4 text-center text-green-600';
+                    
+                    eventIdValue.textContent = result.event_id;
+                    eventIdDisplay.classList.remove('hidden');
+                    
+                    form.reset();
+                } else {
+                    throw new Error(result.error || 'Failed to submit event proposal');
+                }
+            } catch (error) {
+                messageDiv.textContent = error.message;
+                messageDiv.className = 'mt-4 text-center text-red-600';
+                eventIdDisplay.classList.add('hidden');
+            }
+        });
+
+        // Event Status Form
+        document.getElementById('eventStatusForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const eventId = document.getElementById('eventIdInput').value;
+            const resultDiv = document.getElementById('eventStatusResult');
+            
+            try {
+                const response = await fetch(`/api/events/${eventId}`);
+                const event = await response.json();
+
+                document.getElementById('resultEventId').textContent = event.event_id;
+                document.getElementById('resultEventName').textContent = event.nama_event;
+                document.getElementById('resultDescription').textContent = event.deskripsi;
+                document.getElementById('resultStartDate').textContent = event.tanggal_mulai;
+                document.getElementById('resultEndDate').textContent = event.tanggal_selesai;
+                
+                const statusElement = document.getElementById('resultStatus');
+                statusElement.innerHTML = `
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                        ${event.status_approval === 'Approved' ? 'bg-green-100 text-green-800' : 
+                        event.status_approval === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 
+                        event.status_approval === 'Room Booked' ? 'bg-purple-100 text-purple-800' :
+                        'bg-red-100 text-red-800'}">
+                        ${event.status_approval}
+                    </span>
+                `;
+
+                const rejectionDiv = document.getElementById('resultRejectionReason');
+                if (event.rejection_reason) {
+                    rejectionDiv.classList.remove('hidden');
+                    rejectionDiv.querySelector('p:last-child').textContent = event.rejection_reason;
+                } else {
+                    rejectionDiv.classList.add('hidden');
+                }
+
+                resultDiv.classList.remove('hidden');
+            } catch (error) {
+                console.error('Error loading event status:', error);
+                alert('Event tidak ditemukan. Silakan periksa ID acara Anda.');
+            }
+        });
+
+        // Room Booking Form
+        document.getElementById('roomBookingForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const eventId = document.getElementById('roomBookingEventIdInput').value;
+            const resultDiv = document.getElementById('roomBookingResult');
+            
+            try {
+                const response = await fetch(`http://localhost:5012/bookings/${eventId}`);
+                if (!response.ok) throw new Error('Booking not found');
+                const booking = await response.json();
+
+                document.getElementById('resultRoomName').textContent = booking.nama_ruangan || '-';
+                document.getElementById('resultRoomCapacity').textContent = booking.kapasitas ? `${booking.kapasitas} orang` : '-';
+                document.getElementById('resultRoomLocation').textContent = booking.lokasi || '-';
+                document.getElementById('resultBookingDate').textContent = booking.tanggal_booking || '-';
+                document.getElementById('resultBookingStartDate').textContent = booking.tanggal_mulai || '-';
+                document.getElementById('resultBookingEndDate').textContent = booking.tanggal_selesai || '-';
+
+                const statusElement = document.getElementById('resultBookingStatus');
+                const statusClass = booking.status_booking === 'Approved' ? 'bg-green-100 text-green-800' :
+                                  booking.status_booking === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-red-100 text-red-800';
+                
+                statusElement.innerHTML = `
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">
+                        ${booking.status_booking}
+                    </span>
+                `;
+
+                const notesDiv = document.getElementById('resultBookingNotes');
+                if (booking.keterangan_reject) {
+                    notesDiv.classList.remove('hidden');
+                    notesDiv.querySelector('p:last-child').textContent = booking.keterangan_reject;
+                } else {
+                    notesDiv.classList.add('hidden');
+                }
+
+                resultDiv.classList.remove('hidden');
+            } catch (error) {
+                console.error('Error loading booking status:', error);
+                alert('Pemesanan ruangan tidak ditemukan. Silakan periksa ID acara Anda.');
+                resultDiv.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

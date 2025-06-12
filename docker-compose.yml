@@ -1,0 +1,193 @@
+services:
+  frontend_user_spacelog_telu:
+    build:
+      context: ./SpaceLog_Tel-U/frontend_user
+      dockerfile: Dockerfile
+    container_name: spacelog_telu_frontend_user
+    ports:
+      - "5000:5000"
+    environment:
+      ROOM_AVAILABILITY_SERVICE_URL: http://room_availability_service:5001
+      ROOM_RECOMMENDATION_SERVICE_URL: http://room_recommendation_service:5002
+      ROOM_BOOKING_SERVICE_URL: http://room_booking_service:5003
+      ROOM_SCHEDULE_SERVICE_URL: http://room_schedule_service:5004
+      ADD_EVENT_SERVICE_URL: http://add_event_service:5008
+    depends_on:
+      - room_availability_service
+      - room_recommendation_service
+      - room_booking_service
+      - room_schedule_service
+      - add_event_service
+    restart: unless-stopped
+
+  room_availability_service:
+    build:
+      context: ./SpaceLog_Tel-U/room_availability_service
+      dockerfile: Dockerfile
+    container_name: room_availability_service
+    ports:
+      - "5001:5001"
+    restart: unless-stopped
+
+  room_recommendation_service:
+    build:
+      context: ./SpaceLog_Tel-U/room_recommendation_service
+      dockerfile: Dockerfile
+    container_name: room_recommendation_service
+    ports:
+      - "5002:5002"
+    environment:
+      ROOM_AVAILABILITY_SERVICE_URL: http://room_availability_service:5001
+    depends_on:
+      - room_availability_service
+    restart: unless-stopped
+
+  room_booking_service:
+    build:
+      context: ./SpaceLog_Tel-U/room_booking_service
+      dockerfile: Dockerfile
+    container_name: room_booking_service
+    ports:
+      - "5003:5003"
+    environment:
+      ROOM_AVAILABILITY_SERVICE_URL: http://room_availability_service:5001
+    depends_on:
+      - room_availability_service
+    restart: unless-stopped
+
+  room_schedule_service:
+    build:
+      context: ./SpaceLog_Tel-U/room_schedule_service
+      dockerfile: Dockerfile
+    container_name: room_schedule_service
+    ports:
+      - "5004:5004"
+    restart: unless-stopped
+
+  frontend_spacelog_telu:
+    build:
+      context: ./SpaceLog_Tel-U/frontend_admin
+      dockerfile: Dockerfile
+    container_name: spacelog_telu_frontend_admin
+    ports:
+      - "5005:5005"
+    environment:
+      ROOM_AVAILABILITY_SERVICE_URL: http://room_availability_service:5001
+      ROOM_RECOMMENDATION_SERVICE_URL: http://room_recommendation_service:5002
+      ROOM_BOOKING_SERVICE_URL: http://room_booking_service:5003
+      ROOM_SCHEDULE_SERVICE_URL: http://room_schedule_service:5004
+      BOOKING_CONFIRMATION_SERVICE_URL: http://booking_confirmation_service:5006
+      ADD_EVENT_SERVICE_URL: http://add_event_service:5008
+    depends_on:
+      - room_availability_service
+      - room_recommendation_service
+      - room_booking_service
+      - room_schedule_service
+      - booking_confirmation_service
+      - add_event_service
+    restart: unless-stopped
+
+  booking_confirmation_service:
+    build:
+      context: ./SpaceLog_Tel-U/booking_confirmation_service
+      dockerfile: Dockerfile
+    container_name: booking_confirmation_service
+    ports:
+      - "5006:5006"
+    environment:
+      ROOM_BOOKING_SERVICE_URL: http://room_booking_service:5003
+      ROOM_SCHEDULE_SERVICE_URL: http://room_schedule_service:5004
+    depends_on:
+      - room_booking_service
+      - room_schedule_service
+    restart: unless-stopped
+
+  frontend_kemahasiswaan:
+    build:
+      context: ./Kemahasiswaan/frontend_user
+      dockerfile: Dockerfile
+    container_name: kemahasiswaan_frontend
+    ports:
+      - "5007:5007"
+    environment:
+      ADD_EVENT_SERVICE_URL: http://add_event_service:5008
+    depends_on:
+      - add_event_service
+    restart: unless-stopped
+
+  add_event_service:
+    build:
+      context: ./Kemahasiswaan/add_event_service
+      dockerfile: Dockerfile
+    container_name: add_event_service
+    ports:
+      - "5008:5008"
+    restart: unless-stopped
+
+  frontend_ditmawa:
+    build:
+      context: ./Kemahasiswaan/frontend_ditmawa
+      dockerfile: Dockerfile
+    container_name: kemahasiswaan_frontend_ditmawa
+    ports:
+      - "5009:5009"
+    environment:
+      EVENT_APPROVAL_SERVICE_URL: http://event_approval_service:5010
+      EVENT_STATUS_SERVICE_URL: http://event_status_service:5011
+      ROOM_BOOKING_STATUS_SERVICE_URL: http://room_booking_status_service:5012
+    depends_on:
+      - event_approval_service
+      - event_status_service
+      - room_booking_status_service
+    restart: unless-stopped
+
+  event_approval_service:
+    build:
+      context: ./Kemahasiswaan/EventApprovalService
+      dockerfile: Dockerfile
+    container_name: event_approval_service
+    ports:
+      - "5010:5010"
+    environment:
+      ADD_EVENT_SERVICE_URL: http://add_event_service:5008
+    depends_on:
+      - add_event_service
+    restart: unless-stopped
+
+  event_status_service:
+    build:
+      context: ./Kemahasiswaan/EventStatusService
+      dockerfile: Dockerfile
+    container_name: event_status_service
+    ports:
+      - "5011:5011"
+    environment:
+      ADD_EVENT_SERVICE_URL: http://add_event_service:5008
+      EVENT_APPROVAL_SERVICE_URL: http://event_approval_service:5010
+    depends_on:
+      - add_event_service
+      - event_approval_service
+    restart: unless-stopped
+
+  room_booking_status_service:
+    build:
+      context: ./Kemahasiswaan/RoomBookingStatusService
+      dockerfile: Dockerfile
+    container_name: room_booking_status_service
+    ports:
+      - "5012:5012"
+    environment:
+      ROOM_BOOKING_SERVICE_URL: http://room_booking_service:5003
+      EVENT_STATUS_SERVICE_URL: http://event_status_service:5011
+      BOOKING_CONFIRMATION_SERVICE_URL: http://booking_confirmation_service:5006
+      ROOM_AVAILABILITY_SERVICE_URL: http://room_availability_service:5001
+    depends_on:
+      - room_booking_service
+      - event_status_service
+      - booking_confirmation_service
+      - room_availability_service
+    restart: unless-stopped
+
+networks:
+  default:
+    driver: bridge
