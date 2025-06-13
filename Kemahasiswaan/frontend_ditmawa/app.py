@@ -13,6 +13,7 @@ ADD_EVENT_SERVICE = os.getenv("ADD_EVENT_SERVICE_URL", "http://add_event_service
 EVENT_APPROVAL_SERVICE = os.getenv("EVENT_APPROVAL_SERVICE_URL", "http://event_approval_service:5010")
 EVENT_STATUS_SERVICE = os.getenv("EVENT_STATUS_SERVICE_URL", "http://event_status_service:5011")
 ROOM_BOOKING_STATUS_SERVICE = os.getenv("ROOM_BOOKING_STATUS_SERVICE_URL", "http://room_booking_status_service:5012")
+CALENDAR_EVENT_SERVICE = os.getenv("CALENDAR_EVENT_SERVICE_URL", "http://calendar_event_service:5013")
 
 @app.route('/')
 def index():
@@ -170,6 +171,16 @@ def get_booking(booking_id):
                 booking['status_approval'] = event_data.get('status_approval', 'Pending')
 
         return jsonify(booking), 200
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/calendar-events', methods=['GET'])
+def get_calendar_events():
+    try:
+        # Forward the request to calendar service
+        response = requests.get(f"{CALENDAR_EVENT_SERVICE}/api/calendar-events", params=request.args)
+        response.raise_for_status()
+        return jsonify(response.json()), 200
     except requests.exceptions.RequestException as e:
         return jsonify({"error": str(e)}), 500
 

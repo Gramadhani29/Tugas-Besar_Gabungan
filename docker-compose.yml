@@ -135,10 +135,12 @@ services:
       EVENT_APPROVAL_SERVICE_URL: http://event_approval_service:5010
       EVENT_STATUS_SERVICE_URL: http://event_status_service:5011
       ROOM_BOOKING_STATUS_SERVICE_URL: http://room_booking_status_service:5012
+      CALENDAR_EVENT_SERVICE_URL: http://calendar_event_service:5013
     depends_on:
       - event_approval_service
       - event_status_service
       - room_booking_status_service
+      - calendar_event_service
     restart: unless-stopped
 
   event_approval_service:
@@ -186,6 +188,19 @@ services:
       - event_status_service
       - booking_confirmation_service
       - room_availability_service
+    restart: unless-stopped
+
+  calendar_event_service:
+    build:
+      context: ./Kemahasiswaan/EventCalendarServices
+      dockerfile: Dockerfile
+    container_name: calendar_event_service
+    ports:
+      - "5013:5013"
+    environment:
+      ADD_EVENT_SERVICE_URL: http://add_event_service:5008
+    depends_on:
+      - add_event_service
     restart: unless-stopped
 
 networks:

@@ -7,6 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -23,6 +25,24 @@
         }
         .stat-card {
             background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        }
+        .fc-event {
+            cursor: pointer;
+        }
+        .fc-event-title {
+            font-weight: 500;
+        }
+        /* Modal z-index fix */
+        #eventDetailsModal,
+        #rejectionModal {
+            z-index: 60 !important;
+            position: fixed;
+            inset: 0;
+        }
+        .modal-overlay {
+            z-index: 50 !important;
+            position: fixed;
+            inset: 0;
         }
     </style>
 </head>
@@ -110,6 +130,10 @@
                         <span class="material-icons mr-2 text-lg">event_note</span>
                         All Events
                     </button>
+                    <button class="tab-button px-6 py-4 text-sm font-medium text-gray-500 hover:text-gray-700 flex items-center" data-tab="calendar-view">
+                        <span class="material-icons mr-2 text-lg">calendar_month</span>
+                        Calendar View
+                    </button>
                 </nav>
             </div>
 
@@ -183,6 +207,19 @@
                     </table>
                 </div>
             </div>
+
+            <!-- Calendar View Tab Content -->
+            <div id="calendar-view" class="tab-content hidden p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                        <span class="material-icons mr-2 text-blue-600">calendar_month</span>
+                        Event Calendar
+                    </h2>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div id="calendar"></div>
+                </div>
+            </div>
         </div>
     </main>
 
@@ -194,7 +231,7 @@
     </footer>
 
     <!-- Event Details Modal -->
-    <div id="eventDetailsModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden">
+    <div id="eventDetailsModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden" style="z-index:60;">
         <div class="flex items-center justify-center min-h-screen p-4">
             <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full">
                 <div class="p-6">
@@ -216,7 +253,7 @@
     </div>
 
     <!-- Rejection Modal -->
-    <div id="rejectionModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden">
+    <div id="rejectionModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden" style="z-index:60;">
         <div class="flex items-center justify-center min-h-screen p-4">
             <div class="bg-white rounded-xl shadow-xl max-w-lg w-full">
                 <div class="p-6">
@@ -276,6 +313,8 @@
                     loadPendingEvents();
                 } else if (tabId === 'all-events') {
                     loadAllEvents();
+                } else if (tabId === 'calendar-view') {
+                    loadCalendarEvents();
                 }
             });
         });
@@ -294,11 +333,19 @@
                 tableBody.innerHTML = '';
 
                 events.forEach(event => {
-                    // Handle field mapping jika backend pakai nama berbeda
                     const eventId = event.id || event.event_id;
                     const eventName = event.event_name || event.nama_event || '-';
                     const eventDescription = event.description || event.deskripsi || '-';
-                    const eventDate = event.date || event.tanggal_mulai || event.tanggal || '-';
+                    const startDate = event.tanggal_mulai ? new Date(event.tanggal_mulai).toLocaleDateString('id-ID', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    }) : '-';
+                    const endDate = event.tanggal_selesai ? new Date(event.tanggal_selesai).toLocaleDateString('id-ID', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    }) : '-';
                     const status = event.status || event.status_approval || '-';
 
                     const row = document.createElement('tr');
@@ -310,7 +357,7 @@
                             <div class="text-sm text-gray-900">${eventDescription}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">${eventDate ? new Date(eventDate).toLocaleDateString() : '-'}</div>
+                            <div class="text-sm text-gray-900">${startDate} - ${endDate}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             ${status === 'Pending' ? `
@@ -336,20 +383,11 @@
                 const response = await fetch('/api/events');
                 const events = await response.json();
                 
-                // Update stats with proper counting
+                // Update stats
                 const totalEvents = events.length;
-                const approvedEvents = events.filter(e => {
-                    const status = e.status || e.status_approval;
-                    return status === 'Approved';
-                }).length;
-                const rejectedEvents = events.filter(e => {
-                    const status = e.status || e.status_approval;
-                    return status === 'Rejected';
-                }).length;
-                const pendingEvents = events.filter(e => {
-                    const status = e.status || e.status_approval;
-                    return status === 'Pending';
-                }).length;
+                const approvedEvents = events.filter(e => (e.status || e.status_approval) === 'Approved').length;
+                const rejectedEvents = events.filter(e => (e.status || e.status_approval) === 'Rejected').length;
+                const pendingEvents = events.filter(e => (e.status || e.status_approval) === 'Pending').length;
 
                 document.getElementById('totalEvents').textContent = totalEvents;
                 document.getElementById('approvedEvents').textContent = approvedEvents;
@@ -363,7 +401,6 @@
                 const searchTerm = document.getElementById('allEventsSearch').value.toLowerCase();
 
                 const filteredEvents = events.filter(event => {
-                    const eventId = event.id || event.event_id;
                     const eventName = event.event_name || event.nama_event || '';
                     const eventDescription = event.description || event.deskripsi || '';
                     const status = event.status || event.status_approval || '';
@@ -374,11 +411,19 @@
                 });
 
                 filteredEvents.forEach(event => {
-                    // Handle field mapping jika backend pakai nama berbeda
                     const eventId = event.id || event.event_id;
                     const eventName = event.event_name || event.nama_event || '-';
                     const eventDescription = event.description || event.deskripsi || '-';
-                    const eventDate = event.date || event.tanggal_mulai || event.tanggal || '-';
+                    const startDate = event.tanggal_mulai ? new Date(event.tanggal_mulai).toLocaleDateString('id-ID', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    }) : '-';
+                    const endDate = event.tanggal_selesai ? new Date(event.tanggal_selesai).toLocaleDateString('id-ID', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    }) : '-';
                     const status = event.status || event.status_approval || '-';
 
                     const row = document.createElement('tr');
@@ -390,7 +435,7 @@
                             <div class="text-sm text-gray-900">${eventDescription}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">${eventDate ? new Date(eventDate).toLocaleDateString() : '-'}</div>
+                            <div class="text-sm text-gray-900">${startDate} - ${endDate}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
@@ -430,6 +475,17 @@
                 const response = await fetch(`/api/events/${eventId}`);
                 const event = await response.json();
 
+                const startDate = event.tanggal_mulai ? new Date(event.tanggal_mulai).toLocaleDateString('id-ID', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                }) : '-';
+                const endDate = event.tanggal_selesai ? new Date(event.tanggal_selesai).toLocaleDateString('id-ID', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                }) : '-';
+
                 const detailsContent = document.getElementById('eventDetailsContent');
                 detailsContent.innerHTML = `
                     <div class="space-y-6">
@@ -456,12 +512,12 @@
                                         <div class="flex items-center text-sm">
                                             <span class="material-icons text-gray-400 mr-2 text-sm">event</span>
                                             <span class="text-gray-600">Start:</span>
-                                            <span class="ml-2 text-gray-900">${event.date || event.tanggal_mulai || event.tanggal ? new Date(event.date || event.tanggal_mulai || event.tanggal).toLocaleDateString() : '-'}</span>
+                                            <span class="ml-2 text-gray-900">${startDate}</span>
                                         </div>
                                         <div class="flex items-center text-sm">
                                             <span class="material-icons text-gray-400 mr-2 text-sm">event</span>
                                             <span class="text-gray-600">End:</span>
-                                            <span class="ml-2 text-gray-900">${event.tanggal_selesai ? new Date(event.tanggal_selesai).toLocaleDateString() : '-'}</span>
+                                            <span class="ml-2 text-gray-900">${endDate}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -580,6 +636,41 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadPendingEvents();
             loadAllEvents();
+        });
+
+        // Calendar initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            const calendarEl = document.getElementById('calendar');
+            if (calendarEl) {
+                const calendar = new FullCalendar.Calendar(calendarEl, {
+                    initialView: 'dayGridMonth',
+                    headerToolbar: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                    },
+                    events: '/api/calendar-events',
+                    eventClick: function(info) {
+                        viewEventDetails(info.event.id);
+                    },
+                    eventDidMount: function(info) {
+                        // Add tooltip
+                        info.el.title = `${info.event.title}\nStatus: ${info.event.extendedProps.status}\n${info.event.extendedProps.description}`;
+                    }
+                });
+                calendar.render();
+            }
+        });
+
+        // Update calendar when switching to calendar tab
+        document.querySelector('[data-tab="calendar-view"]').addEventListener('click', function() {
+            const calendarEl = document.getElementById('calendar');
+            if (calendarEl) {
+                const calendar = FullCalendar.Calendar.getInstance(calendarEl);
+                if (calendar) {
+                    calendar.refetchEvents();
+                }
+            }
         });
     </script>
 </body>
