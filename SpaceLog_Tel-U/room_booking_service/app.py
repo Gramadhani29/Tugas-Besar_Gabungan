@@ -8,6 +8,7 @@ import requests
 from datetime import datetime, date
 from enum import Enum
 from marshmallow import Schema, fields, ValidationError
+import pytz
 
 # ====================
 # App Initialization
@@ -71,7 +72,7 @@ def get_approved_events():
         response = requests.get(f"{ADD_EVENT_SERVICE}/api/events")
         response.raise_for_status()
         all_events = response.json()
-        approved_events = [event for event in all_events if event.get('status') == 'Approved']
+        approved_events = [event for event in all_events if event.get('status_approval') == 'Approved']
         return jsonify(approved_events)
     except requests.exceptions.RequestException as e:
         return jsonify({'error': f'Service error: {str(e)}'}), 500
@@ -123,7 +124,7 @@ def book_room():
         booking = Booking(
             event_id=event_id,
             room_id=room_id,
-            tanggal_booking=datetime.now(),
+            tanggal_booking=datetime.now(pytz.timezone('Asia/Jakarta')),
             tanggal_mulai=tanggal_mulai_dt,
             tanggal_selesai=tanggal_selesai_dt,
             status_booking=BookingStatus.PENDING.value,

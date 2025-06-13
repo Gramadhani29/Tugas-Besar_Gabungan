@@ -38,6 +38,26 @@
 
     <main class="container mx-auto px-4 py-6 flex-grow">
         <div class="animate-fade-in-up">
+            <!-- Statistik Booking -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <div class="text-gray-500 text-sm">Total Booking</div>
+                    <div class="text-2xl font-bold text-gray-800">{{ bookings|length }}</div>
+                </div>
+                <div class="bg-yellow-50 p-4 rounded-lg shadow border border-yellow-200">
+                    <div class="text-yellow-600 text-sm">Pending</div>
+                    <div class="text-2xl font-bold text-yellow-600">{{ bookings|selectattr('status', 'equalto', 'Pending')|list|length }}</div>
+                </div>
+                <div class="bg-green-50 p-4 rounded-lg shadow border border-green-200">
+                    <div class="text-green-600 text-sm">Approved</div>
+                    <div class="text-2xl font-bold text-green-600">{{ bookings|selectattr('status', 'equalto', 'Approved')|list|length }}</div>
+                </div>
+                <div class="bg-red-50 p-4 rounded-lg shadow border border-red-200">
+                    <div class="text-red-600 text-sm">Rejected</div>
+                    <div class="text-2xl font-bold text-red-600">{{ bookings|selectattr('status', 'equalto', 'Rejected')|list|length }}</div>
+                </div>
+            </div>
+
             <!-- Judul Halaman -->
             <h1 class="text-2xl font-bold mb-6 border-b pb-2 text-gray-800">Daftar Bookingan</h1>
 

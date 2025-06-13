@@ -316,7 +316,7 @@
             const select = document.getElementById('event-select');
             select.innerHTML = '<option value="">-- Pilih event --</option>'; // reset dulu
 
-            fetch('/api/events')
+            fetch('/api/approved-events')
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Failed to load events');
