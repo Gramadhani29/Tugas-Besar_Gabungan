@@ -172,35 +172,38 @@ def get_schedules_proxy():
     except requests.exceptions.RequestException:
         return ("Offline", 503)
 
-@app.route('/update-booking-status/<int:booking_id>', methods=['POST'])
+@app.route('/api/update-booking-status/<int:booking_id>', methods=['POST'])
 def update_booking_status(booking_id):
     try:
         data = request.get_json(force=True)
         # Forward ke booking_confirmation_service
         resp = requests.post(
-            f"{BOOKING_CONFIRMATION_SERVICE}/update-booking-status/{booking_id}",
+            f"{BOOKING_CONFIRMATION_SERVICE}/api/update-booking-status/{booking_id}",
             json=data
         )
+        
+        if resp.status_code == 200:
+            # Jika berhasil di booking_confirmation_service, update di room_booking_service
+            room_booking_resp = requests.post(
+                f"{ROOM_BOOKING_SERVICE}/api/update-booking-status/{booking_id}",
+                json=data
+            )
+            if room_booking_resp.status_code != 200:
+                print(f"Warning: Failed to update room booking service: {room_booking_resp.text}")
+        
         return (resp.text, resp.status_code, resp.headers.items())
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 @app.route('/bookings', methods=['GET'])
 def get_bookings():
-    bookings = Booking.query.order_by(Booking.tanggal_booking.desc()).all()
-    result = []
-    for b in bookings:
-        result.append({
-            'booking_id': b.booking_id,
-            'nama_event': b.nama_event,
-            'nama_ruangan': b.nama_ruangan,
-            'tanggal_booking': b.tanggal_booking.strftime('%Y-%m-%d %H:%M:%S'),
-            'tanggal_mulai': b.tanggal_mulai.strftime('%Y-%m-%d'),
-            'tanggal_selesai': b.tanggal_selesai.strftime('%Y-%m-%d'),
-            'status_booking': b.status_booking,
-            'keterangan_reject': b.keterangan_reject
-        })
-    return jsonify(result)
+    try:
+        response = requests.get(f"{ROOM_BOOKING_SERVICE}/api/bookings")
+        if response.status_code == 200:
+            return jsonify(response.json())
+        return jsonify([])
+    except requests.exceptions.RequestException:
+        return jsonify([])
 
 # ====================
 # Run Application

@@ -155,58 +155,87 @@
         }
     </style>
     <script>
-    function toggleRejectReason(bookingId) {
-        const statusSelect = document.getElementById(`status-${bookingId}`);
-        const keteranganInput = document.getElementById(`keterangan-${bookingId}`);
-        
-        if (statusSelect.value === 'Rejected') {
-            keteranganInput.style.display = 'block';
-            keteranganInput.required = true;
-        } else {
-            keteranganInput.style.display = 'none';
-            keteranganInput.required = false;
-        }
-    }
-
-    function updateStatus(bookingId) {
-        const statusSelect = document.getElementById(`status-${bookingId}`);
-        const keteranganInput = document.getElementById(`keterangan-${bookingId}`);
-        const newStatus = statusSelect.value;
-        const keterangan = keteranganInput ? keteranganInput.value : '';
-
-        if (newStatus === 'Rejected' && !keterangan) {
-            alert('Keterangan reject wajib diisi jika status Rejected');
-            return;
-        }
-
-        const data = {
-            status_booking: newStatus
-        };
-        if (newStatus === 'Rejected') {
-            data.keterangan_reject = keterangan;
-        }
-
-        fetch(`/update-booking-status/${bookingId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                alert(data.error);
+        function toggleRejectReason(bookingId) {
+            const statusSelect = document.getElementById(`status-${bookingId}`);
+            const keteranganInput = document.getElementById(`keterangan-${bookingId}`);
+            
+            if (statusSelect.value === 'Rejected') {
+                keteranganInput.style.display = 'block';
+                keteranganInput.required = true;
             } else {
-                alert('Status booking berhasil diperbarui');
-                location.reload();
+                keteranganInput.style.display = 'none';
+                keteranganInput.required = false;
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Terjadi kesalahan saat memperbarui status');
-        });
-    }
+        }
+
+        function updateStatus(bookingId) {
+            const statusSelect = document.getElementById(`status-${bookingId}`);
+            const keteranganInput = document.getElementById(`keterangan-${bookingId}`);
+            const newStatus = statusSelect.value;
+            const keterangan = keteranganInput ? keteranganInput.value : '';
+
+            if (!newStatus) {
+                alert('Silakan pilih status terlebih dahulu');
+                return;
+            }
+
+            if (newStatus === 'Rejected' && !keterangan) {
+                alert('Keterangan reject wajib diisi jika status Rejected');
+                return;
+            }
+
+            const data = {
+                status: newStatus
+            };
+            if (newStatus === 'Rejected') {
+                data.keterangan_reject = keterangan;
+            }
+
+            // Update status di booking_confirmation_service
+            fetch(`/api/update-booking-status/${bookingId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    // Update status di room_booking_service dengan approval_id
+                    fetch(`/api/update-booking-status/${bookingId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            status_booking: data.approval_log.status,
+                            keterangan_reject: data.approval_log.keterangan_reject,
+                            approval_id: data.approval_log.approval_id
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(roomData => {
+                        if (roomData.error) {
+                            console.error('Error updating room booking:', roomData.error);
+                        }
+                        alert('Status booking berhasil diperbarui');
+                        location.reload();
+                    })
+                    .catch(error => {
+                        console.error('Error updating room booking:', error);
+                        alert('Status booking berhasil diperbarui di sistem utama, tetapi gagal di sistem ruangan');
+                        location.reload();
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan saat memperbarui status');
+            });
+        }
     </script>
 </body>
 </html>

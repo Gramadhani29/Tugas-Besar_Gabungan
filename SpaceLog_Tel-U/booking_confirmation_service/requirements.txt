@@ -4,3 +4,5 @@ flask_sqlalchemy==3.1.1
 flask_cors==4.0.0
 Werkzeug==2.2.3
 ariadne==0.26.2
+graphene==3.1.1
+pytz==2024.1

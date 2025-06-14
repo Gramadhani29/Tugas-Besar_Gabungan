@@ -43,8 +43,6 @@ with app.app_context():
 # ====================
 # REST Endpoints
 # ====================
-
-
 @app.route('/rooms', methods=['GET'])
 def get_rooms():
     rooms = Room.query.all()
@@ -177,13 +175,14 @@ class DeleteRoom(Mutation):
         db.session.commit()
         return DeleteRoom(ok=f"Room ID {room_id} deleted")
 
-# GraphQL schema
+# ----- Query -----
 class Query(ObjectType):
     rooms = graphene.List(RoomType)
 
     def resolve_rooms(self, info):
         return Room.query.all()
 
+# ----- Mutation -----
 class Mutation(ObjectType):
     create_room = CreateRoom.Field()
     update_room = UpdateRoom.Field()

@@ -7,6 +7,8 @@ from flask_cors import CORS
 from datetime import datetime
 import requests
 from enum import Enum
+import graphene
+from graphene import ObjectType, String, Int, Field, List, Mutation
 
 # ====================
 # App Initialization
@@ -258,6 +260,270 @@ def update_schedule(schedule_id):
 @app.route('/health', methods=['GET'])
 def health_check():
     return jsonify({'status': 'healthy'}), 200
+
+# ====================
+# GraphQL
+# ====================
+class RoomScheduleType(ObjectType):
+    schedule_id = Int()
+    room_id = Int()
+    event_id = Int()
+    tanggal_mulai = String()
+    tanggal_selesai = String()
+    status = String()
+    room_name = String()
+    event_name = String()
+    booking_id = Int()
+
+class Query(ObjectType):
+    approved_schedules = graphene.List(RoomScheduleType)
+    approved_schedule = graphene.Field(RoomScheduleType, booking_id=graphene.Int(required=True))
+    room_schedules = graphene.List(RoomScheduleType, room_id=graphene.Int(required=True))
+
+    def resolve_approved_schedules(self, info):
+        try:
+            # Get all bookings from room_booking_service
+            bookings_response = requests.get(f"{ROOM_BOOKING_SERVICE}/api/bookings")
+            if bookings_response.status_code != 200:
+                return []
+
+            all_bookings = bookings_response.json()
+            
+            # Filter approved bookings
+            approved_bookings = [b for b in all_bookings if b.get('status') == 'Approved']
+            
+            results = []
+            for booking in approved_bookings:
+                try:
+                    # Get event details
+                    event_response = requests.get(
+                        f"{ADD_EVENT_SERVICE}/api/events/{booking['event_id']}",
+                        timeout=2
+                    )
+                    event_data = event_response.json() if event_response.status_code == 200 else {}
+
+                    # Get room details
+                    room_response = requests.get(
+                        f"{ROOM_AVAILABILITY_SERVICE}/rooms/{booking['room_id']}",
+                        timeout=2
+                    )
+                    room_data = room_response.json() if room_response.status_code == 200 else {}
+
+                    schedule_data = {
+                        'booking_id': booking['booking_id'],
+                        'room_id': booking['room_id'],
+                        'room_name': room_data.get('nama_ruangan', 'Unknown Room'),
+                        'event_id': booking['event_id'],
+                        'event_name': event_data.get('nama_event', 'Unknown Event'),
+                        'tanggal_mulai': booking['tanggal_mulai'],
+                        'tanggal_selesai': booking['tanggal_selesai'],
+                        'status': booking['status']
+                    }
+                    results.append(schedule_data)
+                    
+                except requests.exceptions.RequestException:
+                    # Fallback if service error
+                    results.append({
+                        'booking_id': booking['booking_id'],
+                        'room_id': booking['room_id'],
+                        'room_name': 'Unknown Room',
+                        'event_id': booking['event_id'],
+                        'event_name': 'Unknown Event',
+                        'tanggal_mulai': booking['tanggal_mulai'],
+                        'tanggal_selesai': booking['tanggal_selesai'],
+                        'status': booking['status']
+                    })
+
+            return results
+
+        except Exception as e:
+            return []
+
+    def resolve_approved_schedule(self, info, booking_id):
+        try:
+            # Get booking from room_booking_service
+            booking_response = requests.get(f"{ROOM_BOOKING_SERVICE}/api/bookings/{booking_id}")
+            if booking_response.status_code != 200:
+                return None
+
+            booking = booking_response.json()
+            
+            # Check if booking is approved
+            if booking.get('status') != 'Approved':
+                return None
+
+            try:
+                # Get event details
+                event_response = requests.get(
+                    f"{ADD_EVENT_SERVICE}/api/events/{booking['event_id']}",
+                    timeout=2
+                )
+                event_data = event_response.json() if event_response.status_code == 200 else {}
+
+                # Get room details
+                room_response = requests.get(
+                    f"{ROOM_AVAILABILITY_SERVICE}/rooms/{booking['room_id']}",
+                    timeout=2
+                )
+                room_data = room_response.json() if room_response.status_code == 200 else {}
+
+                return {
+                    'booking_id': booking['booking_id'],
+                    'room_id': booking['room_id'],
+                    'room_name': room_data.get('nama_ruangan', 'Unknown Room'),
+                    'event_id': booking['event_id'],
+                    'event_name': event_data.get('nama_event', 'Unknown Event'),
+                    'tanggal_mulai': booking['tanggal_mulai'],
+                    'tanggal_selesai': booking['tanggal_selesai'],
+                    'status': booking['status']
+                }
+                
+            except requests.exceptions.RequestException:
+                # Fallback if service error
+                return {
+                    'booking_id': booking['booking_id'],
+                    'room_id': booking['room_id'],
+                    'room_name': 'Unknown Room',
+                    'event_id': booking['event_id'],
+                    'event_name': 'Unknown Event',
+                    'tanggal_mulai': booking['tanggal_mulai'],
+                    'tanggal_selesai': booking['tanggal_selesai'],
+                    'status': booking['status']
+                }
+
+        except Exception as e:
+            return None
+
+    def resolve_room_schedules(self, info, room_id):
+        try:
+            # Get all bookings from room_booking_service
+            bookings_response = requests.get(f"{ROOM_BOOKING_SERVICE}/api/bookings")
+            if bookings_response.status_code != 200:
+                return []
+
+            all_bookings = bookings_response.json()
+            
+            # Filter bookings for this room and approved status
+            room_bookings = [
+                b for b in all_bookings 
+                if str(b.get('room_id')) == str(room_id) and b.get('status') == 'Approved'
+            ]
+            
+            results = []
+            for booking in room_bookings:
+                try:
+                    # Get event details
+                    event_response = requests.get(
+                        f"{ADD_EVENT_SERVICE}/api/events/{booking['event_id']}",
+                        timeout=2
+                    )
+                    event_data = event_response.json() if event_response.status_code == 200 else {}
+
+                    # Get room details
+                    room_response = requests.get(
+                        f"{ROOM_AVAILABILITY_SERVICE}/rooms/{room_id}",
+                        timeout=2
+                    )
+                    room_data = room_response.json() if room_response.status_code == 200 else {}
+
+                    schedule_data = {
+                        'booking_id': booking['booking_id'],
+                        'room_id': booking['room_id'],
+                        'room_name': room_data.get('nama_ruangan', 'Unknown Room'),
+                        'event_id': booking['event_id'],
+                        'event_name': event_data.get('nama_event', 'Unknown Event'),
+                        'tanggal_mulai': booking['tanggal_mulai'],
+                        'tanggal_selesai': booking['tanggal_selesai'],
+                        'status': booking['status']
+                    }
+                    results.append(schedule_data)
+                    
+                except requests.exceptions.RequestException:
+                    # Fallback if service error
+                    results.append({
+                        'booking_id': booking['booking_id'],
+                        'room_id': booking['room_id'],
+                        'room_name': 'Unknown Room',
+                        'event_id': booking['event_id'],
+                        'event_name': 'Unknown Event',
+                        'tanggal_mulai': booking['tanggal_mulai'],
+                        'tanggal_selesai': booking['tanggal_selesai'],
+                        'status': booking['status']
+                    })
+
+            return results
+
+        except Exception as e:
+            print(f"Error in resolve_room_schedules: {str(e)}")
+            return []
+
+schema = graphene.Schema(query=Query)
+
+@app.route("/graphql", methods=["GET", "POST"])
+def graphql():
+    if request.method == "GET":
+        # Optional: serve simple GraphiQL UI for testing
+        graphiql_html = '''
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>GraphiQL</title>
+            <link href="https://cdn.jsdelivr.net/npm/graphiql@2.0.9/graphiql.min.css" rel="stylesheet" />
+        </head>
+        <body style="margin: 0;">
+            <div id="graphiql" style="height: 100vh;"></div>
+            <script crossorigin src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
+            <script crossorigin src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
+            <script crossorigin src="https://cdn.jsdelivr.net/npm/graphiql@2.0.9/graphiql.min.js"></script>
+            <script>
+                const graphQLFetcher = graphQLParams =>
+                    fetch('/graphql', {
+                        method: 'post',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(graphQLParams),
+                    })
+                    .then(response => response.json())
+                    .catch(error => {
+                        console.error('Fetch error:', error);
+                        return { errors: [{ message: error.message }] };
+                    });
+
+                const rootElement = document.getElementById('graphiql');
+                if (ReactDOM.createRoot) {
+                    ReactDOM.createRoot(rootElement).render(
+                        React.createElement(GraphiQL, { fetcher: graphQLFetcher })
+                    );
+                } else {
+                    ReactDOM.render(
+                        React.createElement(GraphiQL, { fetcher: graphQLFetcher }),
+                        rootElement
+                    );
+                }
+            </script>
+        </body>
+        </html>
+        '''
+        return graphiql_html, 200, {'Content-Type': 'text/html'}
+
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No input data provided"}), 400
+
+    result = schema.execute(
+        data.get("query"),
+        variables=data.get("variables"),
+        operation_name=data.get("operationName"),
+        context_value=request,
+    )
+
+    response = {}
+    if result.errors:
+        response["errors"] = [str(e) for e in result.errors]
+    if result.data:
+        response["data"] = result.data
+
+    status_code = 200 if not result.errors else 400
+    return jsonify(response), status_code
 
 # =====================
 # Run Application
