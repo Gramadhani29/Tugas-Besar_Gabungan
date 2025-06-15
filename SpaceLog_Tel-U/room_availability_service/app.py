@@ -178,9 +178,13 @@ class DeleteRoom(Mutation):
 # ----- Query -----
 class Query(ObjectType):
     rooms = graphene.List(RoomType)
+    room = graphene.Field(RoomType, room_id=graphene.Int(required=True))
 
     def resolve_rooms(self, info):
         return Room.query.all()
+    
+    def resolve_room(self, info, room_id):
+        return Room.query.get(room_id)
 
 # ----- Mutation -----
 class Mutation(ObjectType):
